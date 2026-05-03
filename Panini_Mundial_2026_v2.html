@@ -1,0 +1,1422 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panini Mundial 2026 — Gestor de Figuritas</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface2: #1a1a26;
+    --border: #2a2a3a;
+    --accent: #4ade80;
+    --accent2: #22c55e;
+    --red: #f87171;
+    --amber: #fbbf24;
+    --blue: #60a5fa;
+    --purple: #a78bfa;
+    --text: #f1f5f9;
+    --muted: #64748b;
+    --card-radius: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: linear-gradient(135deg, #0f1a0f 0%, #0a0a1f 50%, #1a0a0f 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(20px);
+  }
+
+  .header-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--blue));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .logo span {
+    -webkit-text-fill-color: var(--muted);
+    font-size: 13px;
+    letter-spacing: 3px;
+    display: block;
+    margin-top: 2px;
+  }
+
+  .stats-row {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    flex-wrap: wrap;
+  }
+
+  .stat-pill {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+
+  .stat-pill strong {
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .stat-pill.green strong { color: var(--accent); }
+  .stat-pill.red strong { color: var(--red); }
+  .stat-pill.amber strong { color: var(--amber); }
+  .stat-pill.blue strong { color: var(--blue); }
+
+  .progress-wrap {
+    flex: 1; min-width: 200px;
+  }
+
+  .progress-bar-outer {
+    height: 6px;
+    background: var(--surface2);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 4px;
+  }
+
+  .progress-bar-inner {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent2), var(--blue));
+    border-radius: 3px;
+    transition: width 0.4s ease;
+  }
+
+  .progress-label {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* ── TOOLBAR ── */
+  .toolbar {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 14px 20px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .search-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 180px;
+    max-width: 320px;
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  input[type=text] {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 8px 12px 8px 34px;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input[type=text]:focus { border-color: var(--accent); }
+
+  .filter-tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 3px;
+  }
+
+  .ftab {
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .ftab.active {
+    background: var(--accent);
+    color: #000;
+    font-weight: 600;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn-pdf {
+    background: linear-gradient(135deg, #dc2626, #991b1b);
+    color: white;
+  }
+
+  .btn-pdf:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(220,38,38,0.4); }
+
+  .btn-reset {
+    background: var(--surface2);
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+
+  .btn-reset:hover { border-color: var(--red); color: var(--red); }
+
+  /* ── MAIN ── */
+  main {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  /* ── GROUP BLOCK ── */
+  .group-block {
+    margin-bottom: 20px;
+    border-radius: var(--card-radius);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .group-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+
+  .group-header:hover { background: rgba(255,255,255,0.03); }
+
+  .group-badge {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 1px;
+    width: 34px;
+    text-align: center;
+    line-height: 1;
+  }
+
+  .group-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    flex: 1;
+  }
+
+  .group-teams {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 1px;
+  }
+
+  .group-prog-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+  }
+
+  .group-prog-bar {
+    width: 80px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .group-prog-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: var(--accent);
+    transition: width 0.3s;
+  }
+
+  .group-prog-label {
+    font-size: 11px;
+    color: var(--muted);
+    min-width: 36px;
+    text-align: right;
+  }
+
+  .chevron {
+    font-size: 12px;
+    color: var(--muted);
+    transition: transform 0.2s;
+    margin-left: 4px;
+  }
+
+  .chevron.open { transform: rotate(180deg); }
+
+  /* ── TEAM SUBBLOCK ── */
+  .teams-container {
+    border-top: 1px solid var(--border);
+    display: none;
+  }
+
+  .teams-container.open { display: block; }
+
+  .team-block {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .team-block:last-child { border-bottom: none; }
+
+  .team-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 16px;
+    background: var(--surface2);
+  }
+
+  .team-code {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 16px;
+    letter-spacing: 1px;
+    width: 40px;
+    color: var(--amber);
+  }
+
+  .team-name {
+    font-size: 12px;
+    font-weight: 600;
+    flex: 1;
+    color: var(--text);
+  }
+
+  .team-count {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* ── STICKER GRID ── */
+  .sticker-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+    gap: 5px;
+    padding: 10px 16px 12px;
+  }
+
+  .sticker {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 6px 5px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+    user-select: none;
+  }
+
+  .sticker:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+  }
+
+  .sticker.have {
+    background: rgba(74,222,128,0.1);
+    border-color: var(--accent);
+  }
+
+  .sticker.have .s-code { color: var(--accent); }
+
+  .sticker.have::after {
+    content: '✓';
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 16px;
+    height: 16px;
+    background: var(--accent);
+    color: #000;
+    border-radius: 50%;
+    font-size: 9px;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 16px;
+  }
+
+  .sticker.special {
+    border-color: var(--purple);
+  }
+
+  .sticker.special .s-code { color: var(--purple); }
+
+  .sticker.have.special {
+    background: rgba(167,139,250,0.1);
+    border-color: var(--purple);
+  }
+
+  .sticker.have.special .s-code { color: var(--purple); }
+
+  .s-code {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    display: block;
+    line-height: 1.1;
+  }
+
+  .s-name {
+    font-size: 8.5px;
+    color: var(--muted);
+    margin-top: 2px;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
+  }
+
+  /* SPECIAL sections */
+  .special-section {
+    margin-bottom: 20px;
+    border-radius: var(--card-radius);
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .special-hdr {
+    padding: 10px 16px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 16px;
+    letter-spacing: 1px;
+  }
+
+  /* ── EMPTY ── */
+  .empty-msg {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .empty-msg .emoji { font-size: 40px; display: block; margin-bottom: 12px; }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 500;
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    z-index: 999;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.green { border-color: var(--accent); color: var(--accent); }
+  .toast.amber { border-color: var(--amber); color: var(--amber); }
+
+  /* Loading overlay */
+  #loadingOverlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 999;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 12px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  #loadingOverlay.show { display: flex; }
+
+  .spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ── REPETIDAS ── */
+  .sticker.have .dupe-add-btn {
+    display: block;
+  }
+
+  .dupe-add-btn {
+    display: none;
+    width: 100%;
+    margin-top: 4px;
+    padding: 2px 0;
+    background: rgba(251,191,36,0.15);
+    border: 1px solid var(--amber);
+    border-radius: 4px;
+    color: var(--amber);
+    font-size: 9px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    text-align: center;
+    letter-spacing: 0.5px;
+    transition: background 0.15s;
+    line-height: 1.4;
+  }
+
+  .dupe-add-btn:hover { background: rgba(251,191,36,0.3); }
+
+  /* Badge de repetidas: arriba a la izquierda */
+  .sticker.dupe > .dupe-badge {
+    display: flex;
+  }
+
+  .dupe-badge {
+    display: none;
+    position: absolute;
+    top: -6px;
+    left: -6px;
+    min-width: 16px;
+    height: 16px;
+    background: var(--amber);
+    color: #000;
+    border-radius: 8px;
+    font-size: 8px;
+    font-weight: 900;
+    align-items: center;
+    justify-content: center;
+    padding: 0 3px;
+    line-height: 1;
+  }
+
+  /* Vista Repetidas */
+  .dupes-view {
+    padding: 0;
+  }
+
+  .dupes-header-block {
+    background: rgba(251,191,36,0.08);
+    border: 1px solid rgba(251,191,36,0.3);
+    border-radius: var(--card-radius);
+    padding: 14px 18px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .dupes-header-block .dh-icon { font-size: 28px; }
+
+  .dupes-header-block .dh-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 1px;
+    color: var(--amber);
+  }
+
+  .dupes-header-block .dh-sub {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .dupe-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 8px;
+  }
+
+  .dupe-card {
+    background: rgba(251,191,36,0.07);
+    border: 1px solid rgba(251,191,36,0.35);
+    border-radius: var(--card-radius);
+    padding: 10px 8px;
+    text-align: center;
+    position: relative;
+  }
+
+  .dupe-card .dc-code {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 15px;
+    color: var(--amber);
+    letter-spacing: 0.5px;
+    display: block;
+  }
+
+  .dupe-card .dc-name {
+    font-size: 9px;
+    color: var(--muted);
+    display: block;
+    margin: 2px 0 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .dupe-card .dc-counter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .dc-count-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    color: var(--amber);
+    min-width: 24px;
+    text-align: center;
+    line-height: 1;
+  }
+
+  .dc-count-label {
+    font-size: 9px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .dc-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: inherit;
+    transition: all 0.15s;
+    line-height: 1;
+  }
+
+  .dc-btn.minus { border-color: var(--red); color: var(--red); }
+  .dc-btn.minus:hover { background: rgba(248,113,113,0.15); }
+  .dc-btn.plus { border-color: var(--amber); color: var(--amber); }
+  .dc-btn.plus:hover { background: rgba(251,191,36,0.15); }
+
+  .stat-pill.amber strong { color: var(--amber); }
+
+  @media (max-width: 600px) {
+    .header-inner { gap: 10px; }
+    .logo { font-size: 22px; }
+    .sticker-grid { grid-template-columns: repeat(auto-fill, minmax(60px,1fr)); gap: 4px; }
+    .dupe-card-grid { grid-template-columns: repeat(auto-fill, minmax(90px,1fr)); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      PANINI <br><span>MUNDIAL 2026</span>
+    </div>
+    <div class="stats-row">
+      <div class="stat-pill green"><strong id="st-have">0</strong> Tengo</div>
+      <div class="stat-pill red"><strong id="st-miss">980</strong> Faltan</div>
+      <div class="stat-pill amber"><strong id="st-dupes">0</strong> Repetidas</div>
+      <div class="stat-pill blue"><strong id="st-total">980</strong> Total</div>
+      <div class="progress-wrap">
+        <div class="progress-label" id="pct-label">0% completado</div>
+        <div class="progress-bar-outer">
+          <div class="progress-bar-inner" id="prog-bar" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="searchBox" placeholder="Buscar equipo o código..." oninput="renderAll()">
+  </div>
+  <div class="filter-tabs">
+    <button class="ftab active" onclick="setFilter('all',this)">Todas</button>
+    <button class="ftab" onclick="setFilter('missing',this)">Faltan</button>
+    <button class="ftab" onclick="setFilter('have',this)">Tengo</button>
+    <button class="ftab" onclick="setFilter('dupes',this)">🔄 Repetidas</button>
+  </div>
+  <button class="btn btn-pdf" onclick="generatePDF()">
+    📄 PDF — Figuritas que me faltan
+  </button>
+  <button class="btn btn-reset" onclick="resetAll()">↺ Reiniciar</button>
+</div>
+
+<main id="mainContent"></main>
+
+<div class="toast" id="toast"></div>
+<div id="loadingOverlay"><div class="spinner"></div><span>Generando PDF...</span></div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+const GROUPS = {
+  "A": {color:"#22c55e", teams:[
+    {code:"MEX",name:"Mexico"},
+    {code:"RSA",name:"Sudafrica"},
+    {code:"KOR",name:"Korea Republic"},
+    {code:"CZE",name:"Rep. Checa"},
+  ]},
+  "B": {color:"#ef4444", teams:[
+    {code:"CAN",name:"Canada"},
+    {code:"BIH",name:"Bosnia-Herzegovina"},
+    {code:"QAT",name:"Qatar"},
+    {code:"SUI",name:"Suiza"},
+  ]},
+  "C": {color:"#f97316", teams:[
+    {code:"BRA",name:"Brasil"},
+    {code:"MAR",name:"Marruecos"},
+    {code:"HAI",name:"Haiti"},
+    {code:"SCO",name:"Escocia"},
+  ]},
+  "D": {color:"#3b82f6", teams:[
+    {code:"USA",name:"Estados Unidos"},
+    {code:"PAR",name:"Paraguay"},
+    {code:"AUS",name:"Australia"},
+    {code:"TUR",name:"Turkiye"},
+  ]},
+  "E": {color:"#8b5cf6", teams:[
+    {code:"GER",name:"Alemania"},
+    {code:"CUW",name:"Curazao"},
+    {code:"CIV",name:"Cote d'Ivoire"},
+    {code:"ECU",name:"Ecuador"},
+  ]},
+  "F": {color:"#eab308", teams:[
+    {code:"NED",name:"Paises Bajos"},
+    {code:"JPN",name:"Japon"},
+    {code:"SWE",name:"Suecia"},
+    {code:"TUN",name:"Tunez"},
+  ]},
+  "G": {color:"#06b6d4", teams:[
+    {code:"BEL",name:"Belgica"},
+    {code:"EGY",name:"Egipto"},
+    {code:"IRN",name:"IR Iran"},
+    {code:"NZL",name:"Nueva Zelanda"},
+  ]},
+  "H": {color:"#ec4899", teams:[
+    {code:"ESP",name:"Espana"},
+    {code:"CPV",name:"Cabo Verde"},
+    {code:"KSA",name:"Arabia Saudita"},
+    {code:"URU",name:"Uruguay"},
+  ]},
+  "I": {color:"#14b8a6", teams:[
+    {code:"FRA",name:"Francia"},
+    {code:"SEN",name:"Senegal"},
+    {code:"IRQ",name:"Irak"},
+    {code:"NOR",name:"Noruega"},
+  ]},
+  "J": {color:"#a3e635", teams:[
+    {code:"ARG",name:"Argentina"},
+    {code:"ALG",name:"Argelia"},
+    {code:"AUT",name:"Austria"},
+    {code:"JOR",name:"Jordania"},
+  ]},
+  "K": {color:"#fb923c", teams:[
+    {code:"POR",name:"Portugal"},
+    {code:"COD",name:"Congo DR"},
+    {code:"UZB",name:"Uzbekistan"},
+    {code:"COL",name:"Colombia"},
+  ]},
+  "L": {color:"#c084fc", teams:[
+    {code:"ENG",name:"Inglaterra"},
+    {code:"CRO",name:"Croacia"},
+    {code:"GHA",name:"Ghana"},
+    {code:"PAN",name:"Panama"},
+  ]},
+};
+
+const STICKER_NAMES = {
+  1:"Escudo ★", 2:"Jugador 1", 3:"Jugador 2", 4:"Jugador 3", 5:"Jugador 4",
+  6:"Jugador 5", 7:"Jugador 6", 8:"Jugador 7", 9:"Jugador 8", 10:"Jugador 9",
+  11:"Jugador 10",12:"Jugador 11",13:"Jugador 12",14:"Jugador 13",15:"Jugador 14",
+  16:"Jugador 15",17:"Jugador 16",18:"Jugador 17",19:"Jugador 18",20:"Foto grupal",
+};
+
+const SPECIAL = [
+  {section:"INTRODUCCION", color:"#7c3aed", items:[
+    {code:"INT-1",name:"Portada del album"},
+    {code:"INT-2",name:"Trofeo FIFA"},
+    {code:"INT-3",name:"Sede USA"},
+    {code:"INT-4",name:"Sede Mexico"},
+    {code:"INT-5",name:"Sede Canada"},
+    {code:"INT-6",name:"Cuadro de grupos"},
+    {code:"INT-7",name:"Logo FIFA 26"},
+    {code:"INT-8",name:"Historia del Mundial"},
+    {code:"INT-9",name:"Campeones"},
+  ]},
+  {section:"MUSEO FIFA — CAMPEONES HISTORICOS", color:"#b45309", items:[
+    {code:"MUS-1",name:"Brasil 1970"},
+    {code:"MUS-2",name:"Alemania 1974"},
+    {code:"MUS-3",name:"Argentina 1978"},
+    {code:"MUS-4",name:"Italia 1982"},
+    {code:"MUS-5",name:"Argentina 1986"},
+    {code:"MUS-6",name:"Alemania 1990"},
+    {code:"MUS-7",name:"Brasil 1994"},
+    {code:"MUS-8",name:"Francia 1998"},
+    {code:"MUS-9",name:"Brasil 2002"},
+    {code:"MUS-10",name:"Italia 2006"},
+    {code:"MUS-11",name:"Espana 2010"},
+    {code:"MUS-12",name:"Alemania 2014"},
+    {code:"MUS-13",name:"Arg./Fra. 2018/22"},
+  ]},
+  {section:"COCA-COLA — EXCLUSIVAS EN BOTELLA", color:"#991b1b", items:[
+    {code:"CC-1",name:"Coca-Cola Jug. 1"},
+    {code:"CC-2",name:"Coca-Cola Jug. 2"},
+    {code:"CC-3",name:"Coca-Cola Jug. 3"},
+    {code:"CC-4",name:"Coca-Cola Jug. 4"},
+    {code:"CC-5",name:"Coca-Cola Jug. 5"},
+    {code:"CC-6",name:"Coca-Cola Jug. 6"},
+    {code:"CC-7",name:"Coca-Cola Jug. 7"},
+    {code:"CC-8",name:"Coca-Cola Jug. 8"},
+    {code:"CC-9",name:"Coca-Cola Jug. 9"},
+    {code:"CC-10",name:"Coca-Cola Jug. 10"},
+    {code:"CC-11",name:"Coca-Cola Jug. 11"},
+    {code:"CC-12",name:"Coca-Cola Jug. 12"},
+  ]},
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let have = {};
+let dupes = {};   // code → cantidad de repetidas
+let currentFilter = 'all';
+let openGroups = {};
+
+function loadState() {
+  try {
+    const s = localStorage.getItem('panini2026v2');
+    if (s) { have = JSON.parse(s); }
+    const d = localStorage.getItem('panini2026dupes');
+    if (d) { dupes = JSON.parse(d); }
+  } catch(e) {}
+}
+
+function saveState() {
+  try {
+    localStorage.setItem('panini2026v2', JSON.stringify(have));
+    localStorage.setItem('panini2026dupes', JSON.stringify(dupes));
+  } catch(e) {}
+}
+
+function toggleSticker(code) {
+  if (have[code]) {
+    delete have[code];
+    showToast('❌ ' + code + ' — quitada', 'amber');
+  } else {
+    have[code] = true;
+    showToast('✓ ' + code + ' — marcada como tengo!', 'green');
+  }
+  saveState();
+  updateStats();
+  renderAll();
+}
+
+function addDupe(code, e) {
+  if (e) e.stopPropagation();
+  dupes[code] = (dupes[code] || 0) + 1;
+  saveState();
+  updateStats();
+  renderAll();
+  showToast(`🔄 ${code} — repetida registrada (×${dupes[code]})`, 'amber');
+}
+
+function removeDupe(code, e) {
+  if (e) e.stopPropagation();
+  if (!dupes[code]) return;
+  dupes[code]--;
+  if (dupes[code] <= 0) {
+    delete dupes[code];
+    showToast(`✓ ${code} — dada de baja de repetidas`, 'green');
+  } else {
+    showToast(`🔄 ${code} — quedan ×${dupes[code]} repetidas`, 'amber');
+  }
+  saveState();
+  updateStats();
+  renderAll();
+}
+
+function resetAll() {
+  if (!confirm('¿Reiniciar todo el progreso? No se puede deshacer.')) return;
+  have = {};
+  dupes = {};
+  saveState();
+  updateStats();
+  renderAll();
+  showToast('↺ Progreso reiniciado', 'amber');
+}
+
+// ── STATS ─────────────────────────────────────────────────────────────────────
+function getAllCodes() {
+  const codes = [];
+  for (const g of Object.values(GROUPS)) {
+    for (const t of g.teams) {
+      for (let n = 1; n <= 20; n++) codes.push(`${t.code}-${n}`);
+    }
+  }
+  for (const sec of SPECIAL) {
+    for (const item of sec.items) codes.push(item.code);
+  }
+  return codes;
+}
+
+const ALL_CODES = getAllCodes();
+const TOTAL = ALL_CODES.length;
+
+function updateStats() {
+  const haveCount = Object.keys(have).length;
+  const miss = TOTAL - haveCount;
+  const pct = Math.round(haveCount / TOTAL * 100);
+  const dupesTotal = Object.values(dupes).reduce((a,b)=>a+b, 0);
+  document.getElementById('st-have').textContent = haveCount;
+  document.getElementById('st-miss').textContent = miss;
+  document.getElementById('st-dupes').textContent = dupesTotal;
+  document.getElementById('st-total').textContent = TOTAL;
+  document.getElementById('prog-bar').style.width = pct + '%';
+  document.getElementById('pct-label').textContent = pct + '% completado';
+}
+
+// ── FILTER ────────────────────────────────────────────────────────────────────
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.ftab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderAll();
+}
+
+function stickerVisible(code) {
+  if (currentFilter === 'have') return !!have[code];
+  if (currentFilter === 'missing') return !have[code];
+  if (currentFilter === 'dupes') return !!(dupes[code] && dupes[code] > 0);
+  return true;
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function renderAll() {
+  const search = document.getElementById('searchBox').value.toLowerCase().trim();
+  const main = document.getElementById('mainContent');
+  let html = '';
+
+  // ── VISTA REPETIDAS ──
+  if (currentFilter === 'dupes') {
+    const allDupes = ALL_CODES.filter(c => dupes[c] && dupes[c] > 0);
+    const filtered = search
+      ? allDupes.filter(c => c.toLowerCase().includes(search))
+      : allDupes;
+
+    const total = filtered.reduce((a,c) => a + dupes[c], 0);
+
+    html += `<div class="dupes-view">`;
+    html += `
+      <div class="dupes-header-block">
+        <div class="dh-icon">🔄</div>
+        <div>
+          <div class="dh-title">Figuritas Repetidas</div>
+          <div class="dh-sub">${filtered.length} figuritas distintas · ${total} repetidas en total · Usá − para darlas de baja cuando las cambiés</div>
+        </div>
+      </div>`;
+
+    if (filtered.length === 0) {
+      html += `<div class="empty-msg"><span class="emoji">🙌</span>${
+        search ? 'Sin resultados para tu búsqueda.' : '¡No tenés repetidas! Por ahora...'
+      }</div>`;
+    } else {
+      html += `<div class="dupe-card-grid">`;
+      for (const code of filtered) {
+        const count = dupes[code];
+        // find name
+        let name = code;
+        for (const g of Object.values(GROUPS)) {
+          for (const t of g.teams) {
+            for (let n=1;n<=20;n++) {
+              if (`${t.code}-${n}` === code) { name = STICKER_NAMES[n]; break; }
+            }
+          }
+        }
+        for (const sec of SPECIAL) {
+          for (const item of sec.items) {
+            if (item.code === code) { name = item.name; break; }
+          }
+        }
+        html += `
+          <div class="dupe-card">
+            <span class="dc-code">${code}</span>
+            <span class="dc-name">${name}</span>
+            <div class="dc-counter">
+              <button class="dc-btn minus" onclick="removeDupe('${code}',event)" title="Dar de baja una repetida">−</button>
+              <div>
+                <div class="dc-count-num">${count}</div>
+                <div class="dc-count-label">repet.</div>
+              </div>
+              <button class="dc-btn plus" onclick="addDupe('${code}',event)" title="Agregar repetida">+</button>
+            </div>
+          </div>`;
+      }
+      html += `</div>`;
+    }
+
+    html += `</div>`;
+    main.innerHTML = html;
+    return;
+  }
+
+  // ── VISTA NORMAL (all / have / missing) ──
+  for (const [gName, gData] of Object.entries(GROUPS)) {
+    const visibleTeams = gData.teams.filter(t => {
+      if (search && !t.name.toLowerCase().includes(search) && !t.code.toLowerCase().includes(search)) return false;
+      const stickers = Array.from({length:20},(_,i)=>`${t.code}-${i+1}`);
+      return stickers.some(c => stickerVisible(c));
+    });
+
+    if (visibleTeams.length === 0) continue;
+
+    let gHave = 0, gTotal = 0;
+    for (const t of gData.teams) {
+      for (let n=1;n<=20;n++) {
+        gTotal++;
+        if (have[`${t.code}-${n}`]) gHave++;
+      }
+    }
+    const gPct = Math.round(gHave/gTotal*100);
+    const isOpen = openGroups[gName] !== false;
+
+    html += `
+    <div class="group-block">
+      <div class="group-header" onclick="toggleGroup('${gName}')">
+        <div class="group-badge" style="color:${gData.color}">G${gName}</div>
+        <div>
+          <div class="group-title">GRUPO ${gName}</div>
+          <div class="group-teams">${gData.teams.map(t=>t.name).join(' · ')}</div>
+        </div>
+        <div class="group-prog-wrap">
+          <div class="group-prog-bar"><div class="group-prog-fill" style="width:${gPct}%;background:${gData.color}"></div></div>
+          <div class="group-prog-label">${gHave}/${gTotal}</div>
+        </div>
+        <div class="chevron ${isOpen?'open':''}">▼</div>
+      </div>
+      <div class="teams-container ${isOpen?'open':''}">`;
+
+    for (const t of visibleTeams) {
+      const stickers = Array.from({length:20},(_,i)=>({code:`${t.code}-${i+1}`,name:STICKER_NAMES[i+1],special:i===0}));
+      const vis = stickers.filter(s => stickerVisible(s.code));
+      if (vis.length === 0) continue;
+
+      const tHave = stickers.filter(s=>have[s.code]).length;
+      html += `
+        <div class="team-block">
+          <div class="team-header">
+            <div class="team-code">${t.code}</div>
+            <div class="team-name">${t.name}</div>
+            <div class="team-count">${tHave}/20</div>
+          </div>
+          <div class="sticker-grid">`;
+
+      for (const s of vis) {
+        const isHave = !!have[s.code];
+        const dupeCount = dupes[s.code] || 0;
+        html += `
+          <div class="sticker ${isHave?'have':''} ${s.special?'special':''} ${dupeCount>0?'dupe':''}" onclick="toggleSticker('${s.code}')" title="${isHave?'Clic para quitar':'Clic para marcar como tengo'}">
+            ${dupeCount > 0 ? `<span class="dupe-badge">×${dupeCount}</span>` : ''}
+            <span class="s-code">${s.code}</span>
+            <span class="s-name">${s.name}</span>
+            ${isHave ? `<button class="dupe-add-btn" onclick="addDupe('${s.code}',event)" title="Registrar repetida">+ repetida</button>` : ''}
+          </div>`;
+      }
+
+      html += `</div></div>`;
+    }
+
+    html += `</div></div>`;
+  }
+
+  // Special sections
+  for (const sec of SPECIAL) {
+    const visItems = sec.items.filter(s => {
+      if (search && !s.code.toLowerCase().includes(search) && !s.name.toLowerCase().includes(search)) return false;
+      return stickerVisible(s.code);
+    });
+    if (visItems.length === 0) continue;
+
+    html += `
+    <div class="special-section" style="border-color:${sec.color}33">
+      <div class="special-hdr" style="background:${sec.color}22;color:${sec.color}">${sec.section}</div>
+      <div style="background:var(--surface)">
+        <div class="sticker-grid">`;
+
+    for (const s of visItems) {
+      const isHave = !!have[s.code];
+      const dupeCount = dupes[s.code] || 0;
+      html += `
+        <div class="sticker ${isHave?'have':''} special ${dupeCount>0?'dupe':''}" onclick="toggleSticker('${s.code}')" title="${isHave?'Clic para quitar':'Clic para marcar como tengo'}">
+          ${dupeCount > 0 ? `<span class="dupe-badge">×${dupeCount}</span>` : ''}
+          <span class="s-code">${s.code}</span>
+          <span class="s-name">${s.name}</span>
+          ${isHave ? `<button class="dupe-add-btn" onclick="addDupe('${s.code}',event)" title="Registrar repetida">+ repetida</button>` : ''}
+        </div>`;
+    }
+
+    html += `</div></div></div>`;
+  }
+
+  if (!html) {
+    html = `<div class="empty-msg"><span class="emoji">${currentFilter==='have'?'🎉':'🔍'}</span>${
+      currentFilter==='have' ? '¡No tenés ninguna figurita marcada todavía!<br>Hacé clic sobre cada figurita que tengas.' :
+      currentFilter==='missing' ? '¡Completaste el álbum! 🏆' :
+      'No se encontraron resultados para tu búsqueda.'
+    }</div>`;
+  }
+
+  main.innerHTML = html;
+}
+
+function toggleGroup(g) {
+  openGroups[g] = openGroups[g] === false ? true : false;
+  renderAll();
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, type='green') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ── PDF GENERATION ────────────────────────────────────────────────────────────
+async function generatePDF() {
+  const missing = ALL_CODES.filter(c => !have[c]);
+  if (missing.length === 0) {
+    showToast('¡No te falta ninguna figurita! 🏆', 'green');
+    return;
+  }
+
+  document.getElementById('loadingOverlay').classList.add('show');
+
+  await new Promise(r => setTimeout(r, 50));
+
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+
+    const PW = 210, PH = 297;
+    const ML = 10, MR = 10, MT = 10, MB = 10;
+    const CW = PW - ML - MR;
+    let y = MT;
+
+    const COLS = 10;
+    const SW = CW / COLS;
+    const SH = 12;
+
+    // Colors
+    const C = {
+      bg:      [10, 10, 15],
+      surface: [18, 18, 26],
+      surface2:[26, 26, 38],
+      border:  [42, 42, 58],
+      accent:  [74, 222, 128],
+      text:    [241, 245, 249],
+      muted:   [100, 116, 139],
+      amber:   [251, 191, 36],
+      red:     [220, 38, 38],
+      blue:    [96, 165, 250],
+      purple:  [167, 139, 250],
+      green:   [34, 197, 94],
+    };
+
+    // Helper: apply color array to fill/text/draw
+    function fc(arr) { doc.setFillColor(arr[0], arr[1], arr[2]); }
+    function tc(arr) { doc.setTextColor(arr[0], arr[1], arr[2]); }
+    function dc(arr) { doc.setDrawColor(arr[0], arr[1], arr[2]); }
+
+    function newPage() {
+      doc.addPage();
+      y = MT;
+      fc(C.bg); doc.rect(0, 0, PW, PH, 'F');
+    }
+
+    // Dark background on first page
+    fc(C.bg); doc.rect(0, 0, PW, PH, 'F');
+
+    // ── HEADER ──
+    fc(C.surface); doc.rect(ML, y, CW, 20, 'F');
+    fc(C.accent);  doc.rect(ML, y, 3, 20, 'F');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(18);
+    tc(C.text);
+    doc.text('PANINI  FIFA WORLD CUP 2026', ML + 7, y + 8);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    tc(C.muted);
+    doc.text('FIGURITAS QUE ME FALTAN — Para intercambios', ML + 7, y + 14);
+
+    const haveN = Object.keys(have).length;
+    const missN = missing.length;
+    tc(C.accent);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.text('Tengo: ' + haveN + '  |  Faltan: ' + missN + '  |  Total: ' + TOTAL, PW - MR - 2, y + 8, {align:'right'});
+    tc(C.muted);
+    doc.setFont('helvetica', 'normal');
+    doc.text(new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'}), PW - MR - 2, y + 14, {align:'right'});
+
+    y += 24;
+
+    // Leyenda
+    fc(C.surface2); doc.rect(ML, y, CW, 7, 'F');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    tc(C.muted);
+    doc.text('Escudo = figurita foil especial   |   Estas son las figuritas que no tenes - comparti este PDF para hacer intercambios', ML + 3, y + 4.5);
+    y += 10;
+
+    // ── STICKER CELL ──
+    function drawCell(x, cy, code, name, isSpecial, isHave) {
+      if (isHave) {
+        doc.setFillColor(20, 50, 20);
+      } else if (isSpecial) {
+        doc.setFillColor(30, 20, 50);
+      } else {
+        fc(C.surface2);
+      }
+      doc.roundedRect(x, cy, SW - 1, SH, 1, 1, 'F');
+
+      if (isHave)        dc(C.accent);
+      else if (isSpecial) dc(C.purple);
+      else               dc(C.border);
+      doc.setLineWidth(0.2);
+      doc.roundedRect(x, cy, SW - 1, SH, 1, 1, 'S');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(6.5);
+      if (isHave)        tc(C.accent);
+      else if (isSpecial) tc(C.purple);
+      else               tc(C.muted);
+      doc.text(code, x + (SW-1)/2, cy + 4.5, {align:'center'});
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(5);
+      tc(C.muted);
+      var shortName = name.length > 12 ? name.substring(0,11)+'.' : name;
+      doc.text(shortName, x + (SW-1)/2, cy + 8.5, {align:'center'});
+    }
+
+    // ── SECTION HEADER ──
+    function sectionHeader(label, color) {
+      if (y + 8 > PH - MB) newPage();
+      fc(color); doc.rect(ML, y, CW, 7, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      tc(C.text);
+      doc.text(label, ML + 3, y + 5);
+      y += 9;
+    }
+
+    // ── TEAM BLOCK ──
+    function teamBlock(code, name, stickers, groupColor) {
+      var vis = stickers.filter(function(s){ return !have[s.code]; });
+      if (vis.length === 0) return;
+
+      if (y + 6 + SH + 2 > PH - MB) newPage();
+
+      fc(C.surface); doc.rect(ML, y, CW, 6, 'F');
+      fc(groupColor); doc.rect(ML, y, 2, 6, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      tc(groupColor);
+      doc.text(code, ML + 5, y + 4.2);
+      tc(C.text);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.text(name, ML + 16, y + 4.2);
+      tc(C.muted);
+      doc.setFontSize(6.5);
+      doc.text(vis.length + ' faltan', PW - MR - 2, y + 4.2, {align:'right'});
+      y += 7;
+
+      var col = 0;
+      var rowY = y;
+      for (var i = 0; i < vis.length; i++) {
+        var s = vis[i];
+        var x = ML + col * SW;
+        if (rowY + SH > PH - MB) { newPage(); rowY = y; }
+        drawCell(x, rowY, s.code, s.name, s.special, false);
+        col++;
+        if (col >= COLS) { col = 0; rowY += SH + 2; }
+      }
+      if (col > 0) rowY += SH + 2;
+      y = rowY + 2;
+    }
+
+    // ── BUILD GROUPS ──
+    var GROUP_COLORS = {
+      A:[34,197,94], B:[239,68,68],  C:[249,115,22], D:[59,130,246],
+      E:[139,92,246],F:[234,179,8],  G:[6,182,212],  H:[236,72,153],
+      I:[20,184,166],J:[163,230,53], K:[251,146,60], L:[192,132,252],
+    };
+
+    var groupEntries = Object.entries(GROUPS);
+    for (var gi = 0; gi < groupEntries.length; gi++) {
+      var gName = groupEntries[gi][0];
+      var gData = groupEntries[gi][1];
+      var gColor = GROUP_COLORS[gName] || [100,116,139];
+
+      var groupHasMissing = gData.teams.some(function(t) {
+        for (var n = 1; n <= 20; n++) { if (!have[t.code + '-' + n]) return true; }
+        return false;
+      });
+      if (!groupHasMissing) continue;
+
+      sectionHeader('GRUPO ' + gName + '  .  ' + gData.teams.map(function(t){return t.name;}).join('  .  '), gColor);
+
+      for (var ti = 0; ti < gData.teams.length; ti++) {
+        var t = gData.teams[ti];
+        var stickers = [];
+        for (var n = 1; n <= 20; n++) {
+          stickers.push({code: t.code + '-' + n, name: STICKER_NAMES[n], special: n === 1});
+        }
+        teamBlock(t.code, t.name, stickers, gColor);
+      }
+      y += 2;
+    }
+
+    // ── SPECIAL SECTIONS ──
+    var SP_COLORS = {
+      "INTRODUCCION":[124,58,237],
+      "MUSEO FIFA \u2014 CAMPEONES HISTORICOS":[180,83,9],
+      "COCA-COLA \u2014 EXCLUSIVAS EN BOTELLA":[153,27,27],
+    };
+
+    for (var si = 0; si < SPECIAL.length; si++) {
+      var sec = SPECIAL[si];
+      var visItems = sec.items.filter(function(s){ return !have[s.code]; });
+      if (visItems.length === 0) continue;
+      var sc = SP_COLORS[sec.section] || [100,116,139];
+      sectionHeader(sec.section, sc);
+
+      var col2 = 0;
+      var rowY2 = y;
+      for (var vi = 0; vi < visItems.length; vi++) {
+        var sv = visItems[vi];
+        var x2 = ML + col2 * SW;
+        if (rowY2 + SH > PH - MB) { newPage(); rowY2 = y; }
+        drawCell(x2, rowY2, sv.code, sv.name, true, false);
+        col2++;
+        if (col2 >= COLS) { col2 = 0; rowY2 += SH + 2; }
+      }
+      if (col2 > 0) rowY2 += SH + 2;
+      y = rowY2 + 4;
+    }
+
+    // ── FOOTER on each page ──
+    var total_pages = doc.getNumberOfPages();
+    for (var p = 1; p <= total_pages; p++) {
+      doc.setPage(p);
+      fc(C.surface); doc.rect(0, PH - 8, PW, 8, 'F');
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6);
+      tc(C.muted);
+      doc.text('Panini FIFA World Cup 2026  |  Faltan: ' + missN + ' figuritas  |  Pagina ' + p + ' de ' + total_pages, PW/2, PH - 3.5, {align:'center'});
+    }
+
+    doc.save('Panini_2026_Faltan_' + missN + '_figuritas.pdf');
+    showToast(`✓ PDF generado — ${missN} figuritas que te faltan`, 'green');
+  } catch(e) {
+    showToast('Error generando PDF. Intentá de nuevo.', 'amber');
+    console.error(e);
+  } finally {
+    document.getElementById('loadingOverlay').classList.remove('show');
+  }
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+loadState();
+updateStats();
+renderAll();
+</script>
+</body>
+</html>
